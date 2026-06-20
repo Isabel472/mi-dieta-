@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Gut Health Journal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap');
+  :root {
+    --blush:#F2E8E4; --rose:#C9A99A; --dusty:#B08A8A;
+    --ink:#2C2220; --soft:#F9F4F2; --muted:#9C7E7E; --line:#E5D5D0; --white:#ffffff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--soft); color:var(--ink); font-family:'DM Sans',Georgia,sans-serif; font-weight:300; min-height:100vh; padding-bottom:80px; }
+  .header { text-align:center; padding:36px 20px 24px; border-bottom:1px solid var(--line); margin-bottom:20px; background:var(--white); }
+  .eyebrow { font-size:10px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  h1 { font-family:'Cormorant Garamond',Georgia,serif; font-size:32px; font-weight:300; font-style:italic; color:var(--ink); margin:0 0 6px; line-height:1.1; }
+  .sub { font-size:12px; color:var(--muted); line-height:1.6; }
+  .save-flash { font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--rose); margin-top:8px; opacity:0; transition:opacity .4s; height:16px; }
+  .save-flash.show { opacity:1; }
+  .nav { display:flex; margin:0 16px 16px; border:1px solid var(--line); border-radius:2px; overflow:hidden; background:var(--white); }
+  .nav button { flex:1; padding:10px 4px; border:none; border-right:1px solid var(--line); background:var(--white); color:var(--muted); font-size:11px; font-family:inherit; cursor:pointer; }
+  .nav button.active { background:var(--blush); color:var(--dusty); }
+  .page { display:none; max-width:640px; margin:0 auto; padding:0 16px; }
+  .page.active { display:block; }
+  /* Day selector */
+  .day-selector { display:flex; gap:6px; margin-bottom:16px; overflow-x:auto; padding-bottom:4px; }
+  .day-btn { padding:8px 12px; border-radius:20px; border:1px solid var(--line); background:var(--white); color:var(--muted); font-size:11px; font-family:inherit; cursor:pointer; white-space:nowrap; flex-shrink:0; text-align:center; line-height:1.4; }
+  .day-btn.active { background:var(--rose); border-color:var(--rose); color:var(--white); }
+  .day-btn span { display:block; }
+  .day-btn .date-sub { font-size:9px; opacity:.8; }
+  /* Day card */
+  .day-card { background:var(--white); border:1px solid var(--line); border-radius:2px; overflow:hidden; display:none; }
+  .day-card.active { display:block; }
+  .day-card-header { background:var(--blush); padding:14px 20px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; }
+  .day-title { display:flex; align-items:baseline; gap:8px; }
+  .day-name { font-family:'Cormorant Garamond',serif; font-size:22px; font-style:italic; font-weight:300; color:var(--ink); }
+  .day-full-date { font-size:11px; color:var(--muted); }
+  .day-tag { font-size:10px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; }
+  .day-body { padding:20px; }
+  .section-label { font-size:9px; letter-spacing:.3em; text-transform:uppercase; color:var(--rose); margin:20px 0 10px; display:block; }
+  .section-label:first-child { margin-top:0; }
+  .food-tested { display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--soft); border-left:2px solid var(--rose); font-size:13px; color:var(--ink); }
+  .food-dot { width:6px; height:6px; border-radius:50%; background:var(--rose); flex-shrink:0; }
+  hr { border:none; border-top:1px solid var(--line); margin:18px 0; }
+  /* Feel buttons */
+  .feel-row { display:flex; gap:8px; }
+  .feel-btn { flex:1; padding:10px 4px; border:1px solid var(--line); border-radius:2px; background:var(--white); color:var(--muted); font-size:11px; font-family:inherit; cursor:pointer; text-align:center; }
+  .feel-btn.selected { background:var(--blush); border-color:var(--rose); color:var(--dusty); }
+  .feel-emoji { display:block; font-size:18px; margin-bottom:3px; }
+  /* Scale */
+  .scale-row { display:flex; gap:5px; flex-wrap:wrap; padding-bottom:8px; }
+  .scale-btn { width:28px; height:28px; border-radius:50%; border:1px solid var(--line); background:var(--white); color:var(--muted); font-size:10px; font-family:inherit; cursor:pointer; padding:0; }
+  .scale-btn.filled { background:var(--rose); border-color:var(--rose); color:var(--white); }
+  /* Bathroom */
+  .bath-row { display:flex; gap:8px; flex-wrap:wrap; }
+  .bath-btn { padding:8px 14px; border-radius:20px; border:1px solid var(--line); background:var(--white); color:var(--muted); font-size:12px; font-family:inherit; cursor:pointer; }
+  .bath-btn.selected { background:var(--rose); border-color:var(--rose); color:var(--white); }
+  /* Water */
+  .water-row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .water-drop { font-size:22px; cursor:pointer; opacity:.2; user-select:none; }
+  .water-drop.filled { opacity:1; }
+  .water-note { font-size:11px; color:var(--muted); }
+  /* Notes */
+  textarea { width:100%; min-height:90px; border:1px solid var(--line); border-radius:2px; padding:12px; font-family:inherit; font-size:13px; font-weight:300; color:var(--ink); background:var(--white); resize:vertical; outline:none; line-height:1.7; }
+  textarea:focus { border-color:var(--rose); }
+  textarea::placeholder { color:var(--line); }
+  /* Verdict */
+  .verdict-row { display:flex; gap:8px; flex-wrap:wrap; }
+  /* Reference */
+  .ref-section { margin-bottom:24px; }
+  .ref-section:last-child { margin-bottom:0; }
+  .ref-title { font-size:9px; letter-spacing:.25em; text-transform:uppercase; color:var(--rose); margin-bottom:12px; }
+  .ref-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .ref-table td { padding:8px 0; vertical-align:top; line-height:1.5; border-bottom:1px solid var(--line); color:var(--ink); }
+  .ref-table tr:last-child td { border-bottom:none; }
+  .ref-table td:first-child { color:var(--rose); width:90px; padding-right:8px; white-space:nowrap; }
+  .ref-note { font-size:11px; color:var(--muted); line-height:1.6; margin-top:10px; padding:10px 14px; background:var(--soft); border-left:2px solid var(--line); }
+  .timing-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .timing-item { background:var(--soft); padding:12px; border-radius:2px; font-size:12px; }
+  .timing-item strong { display:block; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--rose); margin-bottom:4px; font-weight:400; }
+  /* Summary */
+  .summary-field { margin-bottom:18px; }
+  /* Card */
+  .card { background:var(--white); border:1px solid var(--line); border-radius:2px; padding:24px; }
+  .card h2 { font-family:'Cormorant Garamond',serif; font-size:24px; font-style:italic; font-weight:300; color:var(--ink); margin-bottom:24px; }
+  .footer { text-align:center; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:14px; color:var(--muted); margin-top:48px; }
+  @media(max-width:480px) { .timing-grid { grid-template-columns:1fr; } h1 { font-size:26px; } .feel-btn { font-size:10px; padding:8px 2px; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <p class="eyebrow">IBS Recovery · Week 1 · 19–25 June</p>
+  <h1>My Gut Health Journal</h1>
+  <p class="sub">Track symptoms, find your patterns. One day at a time.</p>
+  <p class="save-flash" id="saveFlash">✓ saved</p>
+</div>
+
+<div class="nav">
+  <button class="active" onclick="showPage('journal',this)">Journal</button>
+  <button onclick="showPage('ref',this)">How to log</button>
+  <button onclick="showPage('summary',this)">Week summary</button>
+</div>
+
+<!-- JOURNAL PAGE -->
+<div class="page active" id="page-journal">
+  <div class="day-selector">
+    <button class="day-btn" data-day="fri" onclick="switchDay('fri',this)"><span>Fri</span><span class="date-sub">19 Jun</span></button>
+    <button class="day-btn" data-day="sat" onclick="switchDay('sat',this)"><span>Sat</span><span class="date-sub">20 Jun</span></button>
+    <button class="day-btn" data-day="sun" onclick="switchDay('sun',this)"><span>Sun</span><span class="date-sub">21 Jun</span></button>
+    <button class="day-btn" data-day="mon" onclick="switchDay('mon',this)"><span>Mon</span><span class="date-sub">22 Jun</span></button>
+    <button class="day-btn" data-day="tue" onclick="switchDay('tue',this)"><span>Tue</span><span class="date-sub">23 Jun</span></button>
+    <button class="day-btn" data-day="wed" onclick="switchDay('wed',this)"><span>Wed</span><span class="date-sub">24 Jun</span></button>
+    <button class="day-btn" data-day="thu" onclick="switchDay('thu',this)"><span>Thu</span><span class="date-sub">25 Jun</span></button>
+  </div>
+
+  <!-- FRI -->
+  <div class="day-card" id="card-fri">
+    <div class="day-card-header">
+      <div class="day-title"><span class="day-name">Friday</span><span class="day-full-date">19 Jun</span></div>
+      <span class="day-tag">Day 1 · Asparagus test</span>
+    </div>
+    <div class="day-body" id="body-fri">
+      <span class="section-label">Food tested today</span>
+      <div class="food-tested"><span class="food-dot"></span>Asparagus — 4-5 spears at lunch &amp; dinner</div>
+      <span class="section-label">How do you feel overall?</span>
+      <div class="feel-row" id="feel-fri">
+        <button class="feel-btn" data-val="great" onclick="setFeel('fri','great',this)"><span class="feel-emoji">😊</span>Great</button>
+        <button class="feel-btn" data-val="okay" onclick="setFeel('fri','okay',this)"><span class="feel-emoji">😐</span>Okay</button>
+        <button class="feel-btn" data-val="off" onclick="setFeel('fri','off',this)"><span class="feel-emoji">😕</span>Off</button>
+        <button class="feel-btn" data-val="bad" onclick="setFeel('fri','bad',this)"><span class="feel-emoji">😣</span>Bad</button>
+      </div>
+      <hr>
+      <span class="section-label">Bloating — log 2h after lunch</span>
+      <div class="scale-row" id="bloat-fri"></div>
+      <span class="section-label" style="margin-top:12px">Pain / Cramps</span>
+      <div class="scale-row" id="pain-fri"></div>
+      <hr>
+      <span class="section-label">Bathroom</span>
+      <div class="bath-row">
+        <button class="bath-btn" data-key="bath-fri-normal" onclick="toggleBath(this)">✓ Yes, normal</button>
+        <button class="bath-btn" data-key="bath-fri-painful" onclick="toggleBath(this)">✓ Yes, painful</button>
+        <button class="bath-btn" data-key="bath-fri-no" onclick="toggleBath(this)">✗ No</button>
+        <button class="bath-btn" data-key="bath-fri-plantago" onclick="toggleBath(this)">Took Plantago</button>
+      </div>
+      <hr>
+      <span class="section-label">Water intake</span>
+      <div class="water-row" id="water-fri"></div>
+      <hr>
+      <span class="section-label">Notes to myself</span>
+      <textarea data-key="notes-fri" placeholder="How did you feel? Pain location? Energy, mood, workout..." oninput="saveText(this)"></textarea>
+    </div>
+  </div>
+
+  <!-- SAT -->
+  <div class="day-card" id="card-sat">
+    <div class="day-card-header">
+      <div class="day-title"><span class="day-name">Saturday</span><span class="day-full-date">20 Jun</span></div>
+      <span class="day-tag">Day 2 · Asparagus test</span>
+    </div>
+    <div class="day-body">
+      <span class="section-label">Food tested today</span>
+      <div class="food-tested"><span class="food-dot"></span>Asparagus — 4-5 spears at lunch &amp; dinner</div>
+      <span class="section-label">How do you feel overall?</span>
+      <div class="feel-row" id="feel-sat">
+        <button class="feel-btn" data-val="great" onclick="setFeel('sat','great',this)"><span class="feel-emoji">😊</span>Great</button>
+        <button class="feel-btn" data-val="okay" onclick="setFeel('sat','okay',this)"><span class="feel-emoji">😐</span>Okay</button>
+        <button class="feel-btn" data-val="off" onclick="setFeel('sat','off',this)"><span class="feel-emoji">😕</span>Off</button>
+        <button class="feel-btn" data-val="bad" onclick="setFeel('sat','bad',this)"><span class="feel-emoji">😣</span>Bad</button>
+      </div>
+      <hr>
+      <span class="section-label">Bloating — log 2h after lunch</span>
+      <div class="scale-row" id="bloat-sat"></div>
+      <span class="section-label" style="margin-top:12px">Pain / Cramps</span>
+      <div class="scale-row" id="pain-sat"></div>
+      <hr>
+      <span class="section-label">Bathroom</span>
+      <div class="bath-row">
+        <button class="bath-btn" data-key="bath-sat-normal" onclick="toggleBath(this)">✓ Yes, normal</button>
+        <button class="bath-btn" data-key="bath-sat-painful" onclick="toggleBath(this)">✓ Yes, painful</button>
+        <button class="bath-btn" data-key="bath-sat-no" onclick="toggleBath(this)">✗ No</button>
+        <button class="bath-btn" data-key="bath-sat-plantago" onclick="toggleBath(this)">Took Plantago</button>
+      </div>
+      <hr>
+      <span class="section-label">Water intake</span>
+      <div class="water-row" id="water-sat"></div>
+      <hr>
+      <span class="section-label">Notes to myself</span>
+      <textarea data-key="notes-sat" placeholder="How did you feel? Pain location? Energy, mood, workout..." oninput="saveText(this)"></textarea>
+    </div>
+  </div>
+
+  <!-- SUN -->
+  <div class="day-card" id="card-sun">
+    <div class="day-card-header">
+      <div class="day-title"><span class="day-name">Sunday</span><span class="day-full-date">21 Jun</span></div>
+      <span class="day-tag">Day 3 · Asparagus — verdict ⚠️</span>
+    </div>
+    <div class="day-body">
+      <span class="section-label">Food tested today</span>
+      <div class="food-tested"><span class="food-dot"></span>Asparagus — 4-5 spears at lunch &amp; dinner</div>
+      <span class="section-label">How do you feel overall?</span>
+      <div class="feel-row" id="feel-sun">
+        <button class="feel-btn" data-val="great" onclick="setFeel('sun','great',this)"><span class="feel-emoji">😊</span>Great</button>
+        <button class="feel-btn" data-val="okay" onclick="setFeel('sun','okay',this)"><span class="feel-emoji">😐</span>Okay</button>
+        <button class="feel-btn" data-val="off" onclick="setFeel('sun','off',this)"><span class="feel-emoji">😕</span>Off</button>
+        <button class="feel-btn" data-val="bad" onclick="setFeel('sun','bad',this)"><span class="feel-emoji">😣</span>Bad</button>
+      </div>
+      <hr>
+      <span class="section-label">Bloating — log 2h after lunch</span>
+      <div class="scale-row" id="bloat-sun"></div>
+      <span class="section-label" style="margin-top:12px">Pain / Cramps</span>
+      <div class="scale-row" id="pain-sun"></div>
+      <hr>
+      <span class="section-label">Bathroom</span>
+      <div class="bath-row">
+        <button class="bath-btn" data-key="bath-sun-normal" onclick="toggleBath(this)">✓ Yes, normal</button>
+        <button class="bath-btn" data-key="bath-sun-painful" onclick="toggleBath(this)">✓ Yes, painful</button>
+        <button class="bath-btn" data-key="bath-sun-no" onclick="toggleBath(this)">✗ No</button>
+        <button class="bath-btn" data-key="bath-sun-plantago" onclick="toggleBath(this)">Took Plantago</button>
+      </div>
+      <hr>
+      <span class="section-label">Water intake</span>
+      <div class="water-row" id="water-sun"></div>
+      <hr>
+      <span class="section-label">Asparagus verdict</span>
+      <div class="verdict-row">
+        <button class="bath-btn" data-key="verdict-asp-safe" onclick="toggleBath(this)">✅ Safe — add to list</button>
+        <button class="bath-btn" data-key="verdict-asp-avoid" onclick="toggleBath(this)">❌ Reacted — avoid</button>
+        <button class="bath-btn" data-key="verdict-asp-retry" onclick="toggleBath(this)">🤔 Not sure</button>
+      </div>
+      <hr>
+      <span class="section-label">Notes to myself</span>
+      <textarea data-key="notes-sun" placeholder="How did you feel? Pain location? Energy, mood, workout..." oninput="saveText(this)"></textarea>
+    </div>
+  </div>
+
+  <!-- MON -->
+  <div class="day-card" id="card-mon">
+    <div class="day-card-header">
+      <div class="day-title"><span class="day-name">Monday</span><span class="day-full-date">22 Jun</span></div>
+      <span class="day-tag">Day 4 · Rúcula begins</span>
+    </div>
+    <div class="day-body">
+      <span class="section-label">Food tested today</span>
+      <div class="food-tested"><span class="food-dot"></span>Rúcula — 40g raw at lunch &amp; dinner</div>
+      <span class="section-label">How do you feel overall?</span>
+      <div class="feel-row" id="feel-mon">
+        <button class="feel-btn" data-val="great" onclick="setFeel('mon','great',this)"><span class="feel-emoji">😊</span>Great</button>
+        <button class="feel-btn" data-val="okay" onclick="setFeel('mon','okay',this)"><span class="feel-emoji">😐</span>Okay</button>
+        <button class="feel-btn" data-val="off" onclick="setFeel('mon','off',this)"><span class="feel-emoji">😕</span>Off</button>
+        <button class="feel-btn" data-val="bad" onclick="setFeel('mon','bad',this)"><span class="feel-emoji">😣</span>Bad</button>
+      </div>
+      <hr>
+      <span class="section-label">Bloating — log 2h after lunch</span>
+      <div class="scale-row" id="bloat-mon"></div>
+      <span class="section-label" style="margin-top:12px">Pain / Cramps</span>
+      <div class="scale-row" id="pain-mon"></div>
+      <hr>
+      <span class="section-label">Bathroom</span>
+      <div class="bath-row">
+        <button class="bath-btn" data-key="bath-mon-normal" onclick="toggleBath(this)">✓ Yes, normal</button>
+        <button class="bath-btn" data-key="bath-mon-painful" onclick="toggleBath(this)">✓ Yes, painful</button>
+        <button class="bath-btn" data-key="bath-mon-no" onclick="toggleBath(this)">✗ No</button>
+        <button class="bath-btn" data-key="bath-mon-plantago" onclick="toggleBath(this)">Took Plantago</button>
+      </div>
+      <hr>
+      <span class="section-label">Water intake</span>
+      <div class="water-row" id="water-mon"></div>
+      <hr>
+      <span class="section-label">Notes to myself</span>
+      <textarea data-key="notes-mon" placeholder="How did you feel? Pain location? Energy, mood, workout..." oninput="saveText(this)"></textarea>
+    </div>
+  </div>
+
+  <!-- TUE -->
+  <div class="day-card" id="card-tue">
+    <div class="day-card-header">
+      <div class="day-title"><span class="day-name">Tuesday</span><span class="day-full-date">23 Jun</span></div>
+      <span class="day-tag">Day 5 · Rúcula test</span>
+    </div>
+    <div class="day-body">
+      <span class="section-label">Food tested today</span>
+      <div class="food-tested"><span class="food-dot"></span>Rúcula — 40g raw at lunch &amp; dinner</div>
+      <span class="section-label">How do you feel overall?</span>
+      <div class="feel-row" id="feel-tue">
+        <button class="feel-btn" data-val="great" onclick="setFeel('tue','great',this)"><span class="feel-emoji">😊</span>Great</button>
+        <button class="feel-btn" data-val="okay" onclick="setFeel('tue','okay',this)"><span class="feel-emoji">😐</span>Okay</button>
+        <button class="feel-btn" data-val="off" onclick="setFeel('tue','off',this)"><span class="feel-emoji">😕</span>Off</button>
+        <button class="feel-btn" data-val="bad" onclick="setFeel('tue','bad',this)"><span class="feel-emoji">😣</span>Bad</button>
+      </div>
+      <hr>
+      <span class="section-label">Bloating — log 2h after lunch</span>
+      <div class="scale-row" id="bloat-tue"></div>
+      <span class="section-label" style="margin-top:12px">Pain / Cramps</span>
+      <div class="scale-row" id="pain-tue"></div>
+      <hr>
+      <span class="section-label">Bathroom</span>
+      <div class="bath-row">
+        <button class="bath-btn" data-key="bath-tue-normal" onclick="toggleBath(this)">✓ Yes, normal</button>
+        <button class="bath-btn" data-key="bath-tue-painful" onclick="toggleBath(this)">✓ Yes, painful</button>
+        <button class="bath-btn" data-key="bath-tue-no" onclick="toggleBath(this)">✗ No</button>
+        <button class="bath-btn" data-key="bath-tue-plantago" onclick="toggleBath(this)">Took Plantago</button>
+      </div>
+      <hr>
+      <span class="section-label">Water intake</span>
+      <div class="water-row" id="water-tue"></div>
+      <hr>
+      <span class="section-label">Notes to myself</span>
+      <textarea data-key="notes-tue" placeholder="How did you feel? Pain location? Energy, mood, workout..." oninput="saveText(this)"></textarea>
+    </div>
+  </div>
+
+  <!-- WED -->
+  <div class="day-card" id="card-wed">
+    <div class="day-card-header">
+      <div class="day-title"><span class="day-name">Wednesday</span><span class="day-full-date">24 Jun</span></div>
+      <span class="day-tag">Day 6 · Rúcula test</span>
+    </div>
+    <div class="day-body">
+      <span class="section-label">Food tested today</span>
+      <div class="food-tested"><span class="food-dot"></span>Rúcula — 40g raw at lunch &amp; dinner</div>
+      <span class="section-label">How do you feel overall?</span>
+      <div class="feel-row" id="feel-wed">
+        <button class="feel-btn" data-val="great" onclick="setFeel('wed','great',this)"><span class="feel-emoji">😊</span>Great</button>
+        <button class="feel-btn" data-val="okay" onclick="setFeel('wed','okay',this)"><span class="feel-emoji">😐</span>Okay</button>
+        <button class="feel-btn" data-val="off" onclick="setFeel('wed','off',this)"><span class="feel-emoji">😕</span>Off</button>
+        <button class="feel-btn" data-val="bad" onclick="setFeel('wed','bad',this)"><span class="feel-emoji">😣</span>Bad</button>
+      </div>
+      <hr>
+      <span class="section-label">Bloating — log 2h after lunch</span>
+      <div class="scale-row" id="bloat-wed"></div>
+      <span class="section-label" style="margin-top:12px">Pain / Cramps</span>
+      <div class="scale-row" id="pain-wed"></div>
+      <hr>
+      <span class="section-label">Bathroom</span>
+      <div class="bath-row">
+        <button class="bath-btn" data-key="bath-wed-normal" onclick="toggleBath(this)">✓ Yes, normal</button>
+        <button class="bath-btn" data-key="bath-wed-painful" onclick="toggleBath(this)">✓ Yes, painful</button>
+        <button class="bath-btn" data-key="bath-wed-no" onclick="toggleBath(this)">✗ No</button>
+        <button class="bath-btn" data-key="bath-wed-plantago" onclick="toggleBath(this)">Took Plantago</button>
+      </div>
+      <hr>
+      <span class="section-label">Water intake</span>
+      <div class="water-row" id="water-wed"></div>
+      <hr>
+      <span class="section-label">Notes to myself</span>
+      <textarea data-key="notes-wed" placeholder="How did you feel? Pain location? Energy, mood, workout..." oninput="saveText(this)"></textarea>
+    </div>
+  </div>
+
+  <!-- THU -->
+  <div class="day-card" id="card-thu">
+    <div class="day-card-header">
+      <div class="day-title"><span class="day-name">Thursday</span><span class="day-full-date">25 Jun</span></div>
+      <span class="day-tag">Day 7 · Rúcula — verdict ⚠️</span>
+    </div>
+    <div class="day-body">
+      <span class="section-label">Food tested today</span>
+      <div class="food-tested"><span class="food-dot"></span>Rúcula — 40g raw at lunch &amp; dinner</div>
+      <span class="section-label">How do you feel overall?</span>
+      <div class="feel-row" id="feel-thu">
+        <button class="feel-btn" data-val="great" onclick="setFeel('thu','great',this)"><span class="feel-emoji">😊</span>Great</button>
+        <button class="feel-btn" data-val="okay" onclick="setFeel('thu','okay',this)"><span class="feel-emoji">😐</span>Okay</button>
+        <button class="feel-btn" data-val="off" onclick="setFeel('thu','off',this)"><span class="feel-emoji">😕</span>Off</button>
+        <button class="feel-btn" data-val="bad" onclick="setFeel('thu','bad',this)"><span class="feel-emoji">😣</span>Bad</button>
+      </div>
+      <hr>
+      <span class="section-label">Bloating — log 2h after lunch</span>
+      <div class="scale-row" id="bloat-thu"></div>
+      <span class="section-label" style="margin-top:12px">Pain / Cramps</span>
+      <div class="scale-row" id="pain-thu"></div>
+      <hr>
+      <span class="section-label">Bathroom</span>
+      <div class="bath-row">
+        <button class="bath-btn" data-key="bath-thu-normal" onclick="toggleBath(this)">✓ Yes, normal</button>
+        <button class="bath-btn" data-key="bath-thu-painful" onclick="toggleBath(this)">✓ Yes, painful</button>
+        <button class="bath-btn" data-key="bath-thu-no" onclick="toggleBath(this)">✗ No</button>
+        <button class="bath-btn" data-key="bath-thu-plantago" onclick="toggleBath(this)">Took Plantago</button>
+      </div>
+      <hr>
+      <span class="section-label">Rúcula verdict</span>
+      <div class="verdict-row">
+        <button class="bath-btn" data-key="verdict-ruc-safe" onclick="toggleBath(this)">✅ Safe — add to list</button>
+        <button class="bath-btn" data-key="verdict-ruc-avoid" onclick="toggleBath(this)">❌ Reacted — avoid</button>
+        <button class="bath-btn" data-key="verdict-ruc-retry" onclick="toggleBath(this)">🤔 Not sure</button>
+      </div>
+      <hr>
+      <span class="section-label">Water intake</span>
+      <div class="water-row" id="water-thu"></div>
+      <hr>
+      <span class="section-label">Notes to myself</span>
+      <textarea data-key="notes-thu" placeholder="How did you feel? Pain location? Energy, mood, workout..." oninput="saveText(this)"></textarea>
+    </div>
+  </div>
+
+  <p class="footer">healing is not linear — but it is happening.</p>
+</div>
+
+<!-- HOW TO LOG PAGE -->
+<div class="page" id="page-ref">
+  <div class="card">
+    <h2>How to log your symptoms</h2>
+    <div class="ref-section">
+      <p class="ref-title">Bloating (1–10) — log 2h after lunch</p>
+      <table class="ref-table"><tbody>
+        <tr><td>1–2</td><td>Completely flat, no sensation at all</td></tr>
+        <tr><td>3–4</td><td>Mild fullness, clothes comfortable, no visible change</td></tr>
+        <tr><td>5–6</td><td>Noticeable pressure, waistband tighter, slightly visible</td></tr>
+        <tr><td>7–8</td><td>Visibly distended, uncomfortable to bend, need to loosen clothes</td></tr>
+        <tr><td>9–10</td><td>Severely swollen, painful to touch, can't ignore it</td></tr>
+      </tbody></table>
+    </div>
+    <div class="ref-section">
+      <p class="ref-title">Pain / Cramps (1–10) — gut pain only, not hunger</p>
+      <table class="ref-table"><tbody>
+        <tr><td>1–2</td><td>No pain at all</td></tr>
+        <tr><td>3–4</td><td>Mild discomfort, aware of it but doesn't affect anything</td></tr>
+        <tr><td>5–6</td><td>Noticeable cramping, you stop what you're doing momentarily</td></tr>
+        <tr><td>7–8</td><td>Sharp cramps, hard to concentrate, affects your day</td></tr>
+        <tr><td>9–10</td><td>Severe, makes you curl up, can't function normally</td></tr>
+      </tbody></table>
+      <div class="ref-note">📍 Always note WHERE in your notes: upper abdomen, lower left, lower right, or all over.</div>
+    </div>
+    <div class="ref-section">
+      <p class="ref-title">Bathroom — be precise</p>
+      <table class="ref-table"><tbody>
+        <tr><td>✓ Normal</td><td>No straining, soft formed stool (Bristol type 3–4), felt fully empty</td></tr>
+        <tr><td>✓ Painful</td><td>Had to strain, over 10 min, hard/pellet stool (Bristol 1–2), felt incomplete</td></tr>
+        <tr><td>✗ No</td><td>Zero bowel movement the entire day</td></tr>
+        <tr><td>Plantago</td><td>Always log — a day with it vs without are different data points</td></tr>
+      </tbody></table>
+    </div>
+    <div class="ref-section">
+      <p class="ref-title">Overall feel — whole body, not just gut</p>
+      <table class="ref-table"><tbody>
+        <tr><td>😊 Great</td><td>Good energy, no symptoms interfering, trained well, mood normal</td></tr>
+        <tr><td>😐 Okay</td><td>Mild symptoms but manageable, didn't stop you from anything</td></tr>
+        <tr><td>😕 Off</td><td>Symptoms affecting mood, training, or concentration</td></tr>
+        <tr><td>😣 Bad</td><td>Gut symptoms dominated your day, affected everything</td></tr>
+      </tbody></table>
+    </div>
+    <div class="ref-section">
+      <p class="ref-title">Water — what counts</p>
+      <table class="ref-table"><tbody>
+        <tr><td>✅ Count</td><td>Plain water, herbal teas, water with lemon</td></tr>
+        <tr><td>❌ Don't</td><td>Coffee, sparkling water (gas!), juice, water in food</td></tr>
+      </tbody></table>
+    </div>
+    <div class="ref-section">
+      <p class="ref-title">When to log — same time every day</p>
+      <div class="timing-grid">
+        <div class="timing-item"><strong>Bloating &amp; Pain</strong>2 hours after lunch</div>
+        <div class="timing-item"><strong>Bathroom</strong>End of day</div>
+        <div class="timing-item"><strong>Overall feel</strong>Before bed</div>
+        <div class="timing-item"><strong>Water</strong>Throughout the day</div>
+      </div>
+      <div class="ref-note">⚠️ Consistency in timing is everything. Logging at different times makes the data useless for comparison.</div>
+    </div>
+  </div>
+  <p class="footer">healing is not linear — but it is happening.</p>
+</div>
+
+<!-- SUMMARY PAGE -->
+<div class="page" id="page-summary">
+  <div class="card">
+    <h2>End of week reflection</h2>
+    <div class="summary-field"><span class="section-label" style="margin-top:0">Safe foods confirmed ✅</span><textarea data-key="sum-safe" placeholder="e.g. spinach, carrot, tomato, rúcula..." oninput="saveText(this)"></textarea></div>
+    <div class="summary-field"><span class="section-label" style="margin-top:0">Foods to avoid ❌</span><textarea data-key="sum-avoid" placeholder="e.g. asparagus..." oninput="saveText(this)"></textarea></div>
+    <div class="summary-field"><span class="section-label" style="margin-top:0">Best days of the week</span><textarea data-key="sum-best" placeholder="Which days felt good and why?" oninput="saveText(this)"></textarea></div>
+    <div class="summary-field"><span class="section-label" style="margin-top:0">Worst days of the week</span><textarea data-key="sum-worst" placeholder="Which days were hard and why?" oninput="saveText(this)"></textarea></div>
+    <div class="summary-field"><span class="section-label" style="margin-top:0">Notes for my nutritionist / doctor</span><textarea data-key="sum-doctor" placeholder="What do I want to tell them?" style="min-height:100px" oninput="saveText(this)"></textarea></div>
+    <div class="summary-field"><span class="section-label" style="margin-top:0">What I want to try next week</span><textarea data-key="sum-next" placeholder="Next vegetable, next fruit, ISO 100 shake..." oninput="saveText(this)"></textarea></div>
+  </div>
+  <p class="footer">healing is not linear — but it is happening.</p>
+</div>
+
+<script>
+const STORE = 'gut_journal_w1_v2';
+const DAYS = ['fri','sat','sun','mon','tue','wed','thu'];
+
+function load() { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; } }
+function persist(s) { localStorage.setItem(STORE, JSON.stringify(s)); flash(); }
+
+let flashTimer;
+function flash() {
+  const el = document.getElementById('saveFlash');
+  el.classList.add('show');
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// Build scale rows
+function buildScales() {
+  DAYS.forEach(day => {
+    ['bloat','pain'].forEach(type => {
+      const row = document.getElementById(`${type}-${day}`);
+      if (!row) return;
+      row.innerHTML = '';
+      for (let n = 1; n <= 10; n++) {
+        const btn = document.createElement('button');
+        btn.className = 'scale-btn';
+        btn.textContent = n;
+        btn.onclick = () => setScale(day, type, n);
+        row.appendChild(btn);
+      }
+    });
+  });
+}
+
+// Build water rows
+function buildWater() {
+  DAYS.forEach(day => {
+    const row = document.getElementById(`water-${day}`);
+    if (!row) return;
+    row.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+      const drop = document.createElement('span');
+      drop.className = 'water-drop';
+      drop.textContent = '💧';
+      drop.onclick = () => setWater(day, i);
+      row.appendChild(drop);
+    }
+    const note = document.createElement('span');
+    note.className = 'water-note';
+    note.id = `water-note-${day}`;
+    note.textContent = '= 0ml · goal 2.5L';
+    row.appendChild(note);
+  });
+}
+
+// Interactions
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function switchDay(day, btn) {
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.day-card').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('card-' + day).classList.add('active');
+  const s = load(); s['activeDay'] = day; persist(s);
+}
+
+function setFeel(day, val, btn) {
+  document.querySelectorAll(`#feel-${day} .feel-btn`).forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const s = load(); s[`feel-${day}`] = val; persist(s);
+}
+
+function setScale(day, type, val) {
+  const s = load();
+  const key = `${type}-${day}`;
+  s[key] = s[key] === val ? 0 : val;
+  persist(s);
+  renderScale(day, type, s[key]);
+}
+
+function renderScale(day, type, val) {
+  const row = document.getElementById(`${type}-${day}`);
+  if (!row) return;
+  row.querySelectorAll('.scale-btn').forEach((btn, i) => {
+    btn.classList.toggle('filled', i < val);
+  });
+}
+
+function toggleBath(btn) {
+  btn.classList.toggle('selected');
+  const s = load(); s[btn.dataset.key] = btn.classList.contains('selected'); persist(s);
+}
+
+function setWater(day, idx) {
+  const s = load();
+  const cur = s[`water-${day}`] || 0;
+  s[`water-${day}`] = (cur === idx + 1) ? idx : idx + 1;
+  persist(s);
+  renderWater(day, s[`water-${day}`]);
+}
+
+function renderWater(day, val) {
+  const row = document.getElementById(`water-${day}`);
+  if (!row) return;
+  row.querySelectorAll('.water-drop').forEach((d, i) => d.classList.toggle('filled', i < val));
+  const note = document.getElementById(`water-note-${day}`);
+  if (note) note.textContent = `= ${val * 250}ml · goal 2.5L`;
+}
+
+function saveText(el) {
+  const s = load(); s[el.dataset.key] = el.value; persist(s);
+}
+
+// Restore all state
+function restore() {
+  const s = load();
+  // Active day
+  const today = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()];
+  const activeDay = DAYS.includes(today) ? today : 'fri';
+  const dayToShow = s['activeDay'] || activeDay;
+  const dayBtn = document.querySelector(`[data-day="${dayToShow}"]`);
+  if (dayBtn) switchDay(dayToShow, dayBtn);
+
+  DAYS.forEach(day => {
+    // Feel
+    if (s[`feel-${day}`]) {
+      const btn = document.querySelector(`#feel-${day} [data-val="${s[`feel-${day}`]}"]`);
+      if (btn) btn.classList.add('selected');
+    }
+    // Scales
+    renderScale(day, 'bloat', s[`bloat-${day}`] || 0);
+    renderScale(day, 'pain', s[`pain-${day}`] || 0);
+    // Water
+    renderWater(day, s[`water-${day}`] || 0);
+    // Notes
+    const ta = document.querySelector(`[data-key="notes-${day}"]`);
+    if (ta && s[`notes-${day}`]) ta.value = s[`notes-${day}`];
+  });
+
+  // Bath/verdict buttons
+  document.querySelectorAll('[data-key]').forEach(btn => {
+    if (btn.classList.contains('bath-btn') && s[btn.dataset.key]) btn.classList.add('selected');
+  });
+
+  // Summary
+  ['safe','avoid','best','worst','doctor','next'].forEach(field => {
+    const ta = document.querySelector(`[data-key="sum-${field}"]`);
+    if (ta && s[`sum-${field}`]) ta.value = s[`sum-${field}`];
+  });
+}
+
+buildScales();
+buildWater();
+restore();
+</script>
+</body>
+</html>

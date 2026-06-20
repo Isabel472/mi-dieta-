@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Diet Plan — Week 1</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400&display=swap');
+  :root {
+    --blush:#F2E8E4; --rose:#C9A99A; --dusty:#B08A8A;
+    --ink:#2C2220; --soft:#F9F4F2; --muted:#9C7E7E; --line:#E5D5D0; --white:#ffffff;
+    --green:#A8B5A2; --red:#C4857A;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--soft); color:var(--ink); font-family:'DM Sans',Georgia,sans-serif; font-weight:300; min-height:100vh; padding-bottom:80px; }
+
+  /* HEADER */
+  .header { text-align:center; padding:36px 20px 24px; border-bottom:1px solid var(--line); margin-bottom:0; background:var(--white); }
+  .eyebrow { font-size:10px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  h1 { font-family:'Cormorant Garamond',Georgia,serif; font-size:32px; font-weight:300; font-style:italic; color:var(--ink); margin:0 0 6px; line-height:1.1; }
+  .sub { font-size:12px; color:var(--muted); line-height:1.7; }
+  .save-flash { font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--rose); margin-top:8px; opacity:0; transition:opacity .4s; height:16px; }
+  .save-flash.show { opacity:1; }
+
+  /* TARGETS BAR */
+  .targets { display:flex; background:var(--white); border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin-bottom:0; }
+  .target-item { flex:1; text-align:center; padding:14px 4px; border-right:1px solid var(--line); }
+  .target-item:last-child { border-right:none; }
+  .target-val { display:block; font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; color:var(--ink); }
+  .target-label { display:block; font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); margin-top:3px; }
+
+  /* NAV */
+  .nav { display:flex; margin:16px 16px; border:1px solid var(--line); border-radius:2px; overflow:hidden; background:var(--white); }
+  .nav button { flex:1; padding:10px 4px; border:none; border-right:1px solid var(--line); background:var(--white); color:var(--muted); font-size:11px; font-family:inherit; cursor:pointer; }
+  .nav button:last-child { border-right:none; }
+  .nav button.active { background:var(--blush); color:var(--dusty); }
+
+  /* PAGES */
+  .page { display:none; max-width:640px; margin:0 auto; padding:0 16px; }
+  .page.active { display:block; }
+
+  /* CARD */
+  .card { background:var(--white); border:1px solid var(--line); border-radius:2px; overflow:hidden; margin-bottom:16px; }
+  .card-header { background:var(--blush); padding:14px 20px; border-bottom:1px solid var(--line); }
+  .card-title { font-family:'Cormorant Garamond',serif; font-size:20px; font-style:italic; font-weight:300; color:var(--ink); }
+  .card-body { padding:20px; }
+
+  /* FIXED MEALS */
+  .meal-row { display:flex; gap:14px; padding:12px 0; border-bottom:1px solid var(--line); align-items:flex-start; }
+  .meal-row:last-child { border-bottom:none; padding-bottom:0; }
+  .meal-row:first-child { padding-top:0; }
+  .meal-time { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--rose); width:80px; flex-shrink:0; padding-top:2px; }
+  .meal-content { flex:1; }
+  .meal-item { font-size:13px; color:var(--ink); line-height:1.7; }
+  .meal-kcal { font-size:10px; color:var(--muted); margin-top:2px; }
+
+  /* DAY CARDS */
+  .day-card { background:var(--white); border:1px solid var(--line); border-radius:2px; margin-bottom:12px; overflow:hidden; }
+  .day-header { background:var(--blush); padding:13px 20px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; }
+  .day-header.closed { border-bottom:none; }
+  .day-name-wrap { display:flex; align-items:baseline; gap:8px; }
+  .day-name { font-family:'Cormorant Garamond',serif; font-size:20px; font-style:italic; font-weight:300; color:var(--ink); }
+  .day-full-date { font-size:11px; color:var(--muted); }
+  .day-meta { display:flex; align-items:center; gap:10px; }
+  .day-tag { font-size:10px; letter-spacing:.08em; color:var(--muted); text-transform:uppercase; }
+  .chevron { font-size:10px; color:var(--muted); transition:transform .25s; }
+  .day-body-wrap { display:none; padding:16px 20px; }
+  .day-body-wrap.open { display:block; }
+
+  /* MEAL LINES */
+  .day-meal { display:flex; gap:14px; padding:12px 0; border-bottom:1px solid var(--line); align-items:flex-start; }
+  .day-meal:last-child { border-bottom:none; padding-bottom:0; }
+  .day-meal:first-child { padding-top:0; }
+  .day-meal-time { font-size:9px; letter-spacing:.15em; text-transform:uppercase; color:var(--rose); width:55px; flex-shrink:0; padding-top:3px; }
+  .day-meal-right { flex:1; }
+  .check-row { display:flex; align-items:flex-start; gap:10px; cursor:pointer; }
+  .check-box { width:16px; height:16px; border-radius:2px; border:1px solid var(--line); background:var(--white); flex-shrink:0; display:flex; align-items:center; justify-content:center; margin-top:2px; transition:all .2s; font-size:10px; color:var(--white); }
+  .check-row.done .check-box { background:var(--rose); border-color:var(--rose); }
+  .check-row.done .check-text { text-decoration:line-through; opacity:.4; }
+  .check-text { font-size:13px; color:var(--ink); line-height:1.6; }
+  .tag-new { font-size:9px; letter-spacing:.1em; text-transform:uppercase; background:var(--blush); color:var(--dusty); padding:2px 6px; border-radius:10px; margin-left:6px; border:1px solid var(--line); vertical-align:middle; }
+  .meal-kcal-small { font-size:10px; color:var(--muted); margin-top:3px; }
+
+  /* TIMER BANNER */
+  .timer-banner { background:var(--blush); border:1px solid var(--line); border-radius:2px; padding:12px 16px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .timer-left { display:flex; align-items:center; gap:10px; }
+  .timer-icon { font-size:18px; }
+  .timer-text-wrap { }
+  .timer-label { display:block; font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--rose); margin-bottom:2px; }
+  .timer-sub { font-size:11px; color:var(--ink); }
+  .timer-right { display:flex; align-items:center; gap:8px; }
+  .timer-display { font-family:'Cormorant Garamond',serif; font-size:18px; font-style:italic; color:var(--rose); display:none; }
+  .timer-btn { padding:8px 16px; background:var(--rose); color:var(--white); border:none; border-radius:20px; font-size:12px; font-family:inherit; cursor:pointer; white-space:nowrap; }
+  .timer-btn.active { background:var(--dusty); }
+
+  /* RULES */
+  .rule-item { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); font-size:13px; color:var(--ink); line-height:1.5; }
+  .rule-item:last-child { border-bottom:none; }
+  .rule-dash { color:var(--rose); flex-shrink:0; }
+  .lists-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+  .list-card { background:var(--white); border:1px solid var(--line); border-radius:2px; padding:20px; }
+  .list-label { font-size:9px; letter-spacing:.25em; text-transform:uppercase; margin-bottom:12px; display:block; }
+  .list-label.safe { color:var(--green); }
+  .list-label.avoid { color:var(--red); }
+  .list-item { font-size:12px; color:var(--ink); padding:5px 0; border-bottom:1px solid var(--line); }
+  .list-item:last-child { border-bottom:none; }
+
+  /* GROCERY */
+  .grocery-section { margin-bottom:24px; }
+  .grocery-label { font-size:9px; letter-spacing:.2em; text-transform:uppercase; color:var(--rose); margin-bottom:8px; display:block; }
+  .grocery-item { display:flex; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:13px; color:var(--ink); }
+  .grocery-item:last-child { border-bottom:none; }
+  .grocery-dash { color:var(--rose); }
+
+  .section-card { background:var(--white); border:1px solid var(--line); border-radius:2px; padding:24px; margin-bottom:16px; }
+  .section-card h2 { font-family:'Cormorant Garamond',serif; font-size:22px; font-style:italic; font-weight:300; color:var(--ink); margin-bottom:20px; }
+
+  .footer { text-align:center; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:14px; color:var(--muted); margin-top:40px; padding-bottom:20px; }
+
+  @media(max-width:480px) {
+    .lists-grid { grid-template-columns:1fr; }
+    h1 { font-size:26px; }
+    .day-tag { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <p class="eyebrow">Week 1 · Low-FODMAP · 19–25 June</p>
+  <h1>My Diet Plan</h1>
+  <p class="sub">~1,600 kcal/day · Chicken &amp; Salmon · No carbs at night</p>
+  <p class="save-flash" id="saveFlash">✓ saved</p>
+</div>
+
+<div class="targets">
+  <div class="target-item"><span class="target-val">1,600</span><span class="target-label">kcal / day</span></div>
+  <div class="target-item"><span class="target-val">~110g</span><span class="target-label">protein</span></div>
+  <div class="target-item"><span class="target-val">2.5L</span><span class="target-label">water min</span></div>
+  <div class="target-item"><span class="target-val">2</span><span class="target-label">kiwis daily</span></div>
+</div>
+
+<div class="nav">
+  <button class="active" onclick="showPage('plan',this)">My week</button>
+  <button onclick="showPage('rules',this)">Daily rules</button>
+  <button onclick="showPage('grocery',this)">Grocery list</button>
+</div>
+
+<!-- PLAN PAGE -->
+<div class="page active" id="page-plan">
+
+  <!-- Fixed meals -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">Fixed every single day</span></div>
+    <div class="card-body">
+      <div class="meal-row">
+        <span class="meal-time">Breakfast</span>
+        <div class="meal-content">
+          <div class="meal-item">2 eggs + 2 egg whites scrambled with spinach<br>100g lactose-free Greek yogurt + blueberries<br>1 slice Schär bread (sin gluten)</div>
+          <div class="meal-kcal">~400 kcal · 30g protein</div>
+        </div>
+      </div>
+      <div class="meal-row">
+        <span class="meal-time">Mid-morning</span>
+        <div class="meal-content">
+          <div class="meal-item">2 kiwis + 1 tbsp chia seeds in water</div>
+          <div class="meal-kcal">~120 kcal · doctor's order for constipation</div>
+        </div>
+      </div>
+      <div class="meal-row">
+        <span class="meal-time">Snack</span>
+        <div class="meal-content">
+          <div class="meal-item">10 almonds + 10 walnuts</div>
+          <div class="meal-kcal">~180 kcal · no new foods this week</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FRI -->
+  <div class="day-card">
+    <div class="day-header" onclick="toggleDay(this)">
+      <div class="day-name-wrap"><span class="day-name">Friday</span><span class="day-full-date">19 Jun</span></div>
+      <div class="day-meta"><span class="day-tag">Asparagus — Day 1</span><span class="chevron">▼</span></div>
+    </div>
+    <div class="day-body-wrap open">
+      <div class="day-meal">
+        <span class="day-meal-time">Lunch</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-fri-l" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled salmon (150g) + basmati rice (70g dry) + 4–5 asparagus spears <span class="tag-new">new</span></span>
+          </div>
+          <div class="meal-kcal-small">~500 kcal · 36g protein</div>
+        </div>
+      </div>
+      <div class="timer-banner">
+        <div class="timer-left">
+          <span class="timer-icon">⏱</span>
+          <div class="timer-text-wrap">
+            <span class="timer-label">Log symptoms 2h after lunch</span>
+            <span class="timer-sub">Open journal → log bloating &amp; pain</span>
+          </div>
+        </div>
+        <div class="timer-right">
+          <span class="timer-display" id="tdisp-fri"></span>
+          <button class="timer-btn" id="tbtn-fri" onclick="startTimer('fri')">Start 2h timer</button>
+        </div>
+      </div>
+      <div class="day-meal">
+        <span class="day-meal-time">Dinner</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-fri-d" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled chicken breast (150g) + 4–5 asparagus spears <span class="tag-new">new</span></span>
+          </div>
+          <div class="meal-kcal-small">~300 kcal · 38g protein · no carbs</div>
+        </div>
+      </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+      <span style="font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--rose);margin-bottom:8px;display:block">Notes to myself</span>
+      <textarea data-key="diet-notes-fri" placeholder="What did I eat exactly? How did I feel? Any observations..." oninput="saveText(this)" style="width:100%;min-height:80px;border:1px solid var(--line);border-radius:2px;padding:12px;font-family:inherit;font-size:13px;font-weight:300;color:var(--ink);background:var(--white);resize:vertical;outline:none;line-height:1.7;box-sizing:border-box"></textarea>
+    </div>
+  </div>
+
+  <!-- SAT -->
+  <div class="day-card">
+    <div class="day-header closed" onclick="toggleDay(this)">
+      <div class="day-name-wrap"><span class="day-name">Saturday</span><span class="day-full-date">20 Jun</span></div>
+      <div class="day-meta"><span class="day-tag">Asparagus — Day 2</span><span class="chevron">▼</span></div>
+    </div>
+    <div class="day-body-wrap">
+      <div class="day-meal">
+        <span class="day-meal-time">Lunch</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-sat-l" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled chicken breast (150g) + quinoa (70g dry) + 4–5 asparagus spears <span class="tag-new">new</span></span>
+          </div>
+          <div class="meal-kcal-small">~500 kcal · 38g protein</div>
+        </div>
+      </div>
+      <div class="timer-banner">
+        <div class="timer-left"><span class="timer-icon">⏱</span><div class="timer-text-wrap"><span class="timer-label">Log symptoms 2h after lunch</span><span class="timer-sub">Open journal → log bloating &amp; pain</span></div></div>
+        <div class="timer-right"><span class="timer-display" id="tdisp-sat"></span><button class="timer-btn" id="tbtn-sat" onclick="startTimer('sat')">Start 2h timer</button></div>
+      </div>
+      <div class="day-meal">
+        <span class="day-meal-time">Dinner</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-sat-d" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled salmon (150g) + 4–5 asparagus spears <span class="tag-new">new</span></span>
+          </div>
+          <div class="meal-kcal-small">~340 kcal · 35g protein · no carbs</div>
+        </div>
+      </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+      <span style="font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--rose);margin-bottom:8px;display:block">Notes to myself</span>
+      <textarea data-key="diet-notes-sat" placeholder="What did I eat exactly? How did I feel? Any observations..." oninput="saveText(this)" style="width:100%;min-height:80px;border:1px solid var(--line);border-radius:2px;padding:12px;font-family:inherit;font-size:13px;font-weight:300;color:var(--ink);background:var(--white);resize:vertical;outline:none;line-height:1.7;box-sizing:border-box"></textarea>
+    </div>
+  </div>
+
+  <!-- SUN -->
+  <div class="day-card">
+    <div class="day-header closed" onclick="toggleDay(this)">
+      <div class="day-name-wrap"><span class="day-name">Sunday</span><span class="day-full-date">21 Jun</span></div>
+      <div class="day-meta"><span class="day-tag">Asparagus — Day 3 ⚠️ verdict</span><span class="chevron">▼</span></div>
+    </div>
+    <div class="day-body-wrap">
+      <div class="day-meal">
+        <span class="day-meal-time">Lunch</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-sun-l" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled salmon (150g) + basmati rice (70g dry) + 4–5 asparagus spears <span class="tag-new">new</span></span>
+          </div>
+          <div class="meal-kcal-small">~500 kcal · 36g protein</div>
+        </div>
+      </div>
+      <div class="timer-banner">
+        <div class="timer-left"><span class="timer-icon">⏱</span><div class="timer-text-wrap"><span class="timer-label">Log symptoms 2h after lunch</span><span class="timer-sub">Open journal → log bloating &amp; pain</span></div></div>
+        <div class="timer-right"><span class="timer-display" id="tdisp-sun"></span><button class="timer-btn" id="tbtn-sun" onclick="startTimer('sun')">Start 2h timer</button></div>
+      </div>
+      <div class="day-meal">
+        <span class="day-meal-time">Dinner</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-sun-d" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled chicken breast (150g) + 4–5 asparagus spears <span class="tag-new">new</span></span>
+          </div>
+          <div class="meal-kcal-small">~300 kcal · 38g protein · no carbs</div>
+        </div>
+      </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+      <span style="font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--rose);margin-bottom:8px;display:block">Notes to myself</span>
+      <textarea data-key="diet-notes-sun" placeholder="What did I eat exactly? How did I feel? Any observations..." oninput="saveText(this)" style="width:100%;min-height:80px;border:1px solid var(--line);border-radius:2px;padding:12px;font-family:inherit;font-size:13px;font-weight:300;color:var(--ink);background:var(--white);resize:vertical;outline:none;line-height:1.7;box-sizing:border-box"></textarea>
+    </div>
+  </div>
+
+  <!-- MON -->
+  <div class="day-card">
+    <div class="day-header closed" onclick="toggleDay(this)">
+      <div class="day-name-wrap"><span class="day-name">Monday</span><span class="day-full-date">22 Jun</span></div>
+      <div class="day-meta"><span class="day-tag">Rúcula — Day 1</span><span class="chevron">▼</span></div>
+    </div>
+    <div class="day-body-wrap">
+      <div class="day-meal">
+        <span class="day-meal-time">Lunch</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-mon-l" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled chicken breast (150g) + quinoa (70g dry) + rúcula 40g, olive oil &amp; lemon <span class="tag-new">new</span></span>
+          </div>
+          <div class="meal-kcal-small">~490 kcal · 37g protein</div>
+        </div>
+      </div>
+      <div class="timer-banner">
+        <div class="timer-left"><span class="timer-icon">⏱</span><div class="timer-text-wrap"><span class="timer-label">Log symptoms 2h after lunch</span><span class="timer-sub">Open journal → log bloating &amp; pain</span></div></div>
+        <div class="timer-right"><span class="timer-display" id="tdisp-mon"></span><button class="timer-btn" id="tbtn-mon" onclick="startTimer('mon')">Start 2h timer</button></div>
+      </div>
+      <div class="day-meal">
+        <span class="day-meal-time">Dinner</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-mon-d" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled salmon (150g) + rúcula on the side <span class="tag-new">new</span></span>
+          </div>
+          <div class="meal-kcal-small">~340 kcal · 35g protein · no carbs</div>
+        </div>
+      </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+      <span style="font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--rose);margin-bottom:8px;display:block">Notes to myself</span>
+      <textarea data-key="diet-notes-mon" placeholder="What did I eat exactly? How did I feel? Any observations..." oninput="saveText(this)" style="width:100%;min-height:80px;border:1px solid var(--line);border-radius:2px;padding:12px;font-family:inherit;font-size:13px;font-weight:300;color:var(--ink);background:var(--white);resize:vertical;outline:none;line-height:1.7;box-sizing:border-box"></textarea>
+    </div>
+  </div>
+
+  <!-- TUE -->
+  <div class="day-card">
+    <div class="day-header closed" onclick="toggleDay(this)">
+      <div class="day-name-wrap"><span class="day-name">Tuesday</span><span class="day-full-date">23 Jun</span></div>
+      <div class="day-meta"><span class="day-tag">Rúcula — Day 2</span><span class="chevron">▼</span></div>
+    </div>
+    <div class="day-body-wrap">
+      <div class="day-meal">
+        <span class="day-meal-time">Lunch</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-tue-l" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled salmon (150g) + basmati rice (70g dry) + rúcula + tomato ✓</span>
+          </div>
+          <div class="meal-kcal-small">~490 kcal · 36g protein</div>
+        </div>
+      </div>
+      <div class="timer-banner">
+        <div class="timer-left"><span class="timer-icon">⏱</span><div class="timer-text-wrap"><span class="timer-label">Log symptoms 2h after lunch</span><span class="timer-sub">Open journal → log bloating &amp; pain</span></div></div>
+        <div class="timer-right"><span class="timer-display" id="tdisp-tue"></span><button class="timer-btn" id="tbtn-tue" onclick="startTimer('tue')">Start 2h timer</button></div>
+      </div>
+      <div class="day-meal">
+        <span class="day-meal-time">Dinner</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-tue-d" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled chicken breast (150g) + rúcula + spinach ✓</span>
+          </div>
+          <div class="meal-kcal-small">~290 kcal · 33g protein · no carbs</div>
+        </div>
+      </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+      <span style="font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--rose);margin-bottom:8px;display:block">Notes to myself</span>
+      <textarea data-key="diet-notes-tue" placeholder="What did I eat exactly? How did I feel? Any observations..." oninput="saveText(this)" style="width:100%;min-height:80px;border:1px solid var(--line);border-radius:2px;padding:12px;font-family:inherit;font-size:13px;font-weight:300;color:var(--ink);background:var(--white);resize:vertical;outline:none;line-height:1.7;box-sizing:border-box"></textarea>
+    </div>
+  </div>
+
+  <!-- WED -->
+  <div class="day-card">
+    <div class="day-header closed" onclick="toggleDay(this)">
+      <div class="day-name-wrap"><span class="day-name">Wednesday</span><span class="day-full-date">24 Jun</span></div>
+      <div class="day-meta"><span class="day-tag">Rúcula — Day 3</span><span class="chevron">▼</span></div>
+    </div>
+    <div class="day-body-wrap">
+      <div class="day-meal">
+        <span class="day-meal-time">Lunch</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-wed-l" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled chicken breast (150g) + quinoa (70g dry) + rúcula + carrot ✓</span>
+          </div>
+          <div class="meal-kcal-small">~490 kcal · 37g protein</div>
+        </div>
+      </div>
+      <div class="timer-banner">
+        <div class="timer-left"><span class="timer-icon">⏱</span><div class="timer-text-wrap"><span class="timer-label">Log symptoms 2h after lunch</span><span class="timer-sub">Open journal → log bloating &amp; pain</span></div></div>
+        <div class="timer-right"><span class="timer-display" id="tdisp-wed"></span><button class="timer-btn" id="tbtn-wed" onclick="startTimer('wed')">Start 2h timer</button></div>
+      </div>
+      <div class="day-meal">
+        <span class="day-meal-time">Dinner</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-wed-d" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled salmon (150g) + rúcula + tomato ✓</span>
+          </div>
+          <div class="meal-kcal-small">~330 kcal · 35g protein · no carbs</div>
+        </div>
+      </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+      <span style="font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--rose);margin-bottom:8px;display:block">Notes to myself</span>
+      <textarea data-key="diet-notes-wed" placeholder="What did I eat exactly? How did I feel? Any observations..." oninput="saveText(this)" style="width:100%;min-height:80px;border:1px solid var(--line);border-radius:2px;padding:12px;font-family:inherit;font-size:13px;font-weight:300;color:var(--ink);background:var(--white);resize:vertical;outline:none;line-height:1.7;box-sizing:border-box"></textarea>
+    </div>
+  </div>
+
+  <!-- THU -->
+  <div class="day-card">
+    <div class="day-header closed" onclick="toggleDay(this)">
+      <div class="day-name-wrap"><span class="day-name">Thursday</span><span class="day-full-date">25 Jun</span></div>
+      <div class="day-meta"><span class="day-tag">Rúcula — Day 4 ⚠️ verdict</span><span class="chevron">▼</span></div>
+    </div>
+    <div class="day-body-wrap">
+      <div class="day-meal">
+        <span class="day-meal-time">Lunch</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-thu-l" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled salmon (150g) + basmati rice (70g dry) + rúcula + spinach ✓</span>
+          </div>
+          <div class="meal-kcal-small">~480 kcal · 36g protein</div>
+        </div>
+      </div>
+      <div class="timer-banner">
+        <div class="timer-left"><span class="timer-icon">⏱</span><div class="timer-text-wrap"><span class="timer-label">Log symptoms 2h after lunch</span><span class="timer-sub">Open journal → log bloating &amp; pain</span></div></div>
+        <div class="timer-right"><span class="timer-display" id="tdisp-thu"></span><button class="timer-btn" id="tbtn-thu" onclick="startTimer('thu')">Start 2h timer</button></div>
+      </div>
+      <div class="day-meal">
+        <span class="day-meal-time">Dinner</span>
+        <div class="day-meal-right">
+          <div class="check-row" data-key="meal-thu-d" onclick="toggleCheck(this)">
+            <div class="check-box">✓</div>
+            <span class="check-text">Grilled chicken breast (150g) + rúcula on the side</span>
+          </div>
+          <div class="meal-kcal-small">~290 kcal · 30g protein · no carbs</div>
+        </div>
+      </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+      <span style="font-size:9px;letter-spacing:.3em;text-transform:uppercase;color:var(--rose);margin-bottom:8px;display:block">Notes to myself</span>
+      <textarea data-key="diet-notes-thu" placeholder="What did I eat exactly? How did I feel? Any observations..." oninput="saveText(this)" style="width:100%;min-height:80px;border:1px solid var(--line);border-radius:2px;padding:12px;font-family:inherit;font-size:13px;font-weight:300;color:var(--ink);background:var(--white);resize:vertical;outline:none;line-height:1.7;box-sizing:border-box"></textarea>
+    </div>
+  </div>
+
+  <p class="footer">you are doing something really good for yourself.</p>
+</div>
+
+<!-- RULES PAGE -->
+<div class="page" id="page-rules">
+  <div class="section-card">
+    <h2>Daily non-negotiables</h2>
+    <div class="rule-item"><span class="rule-dash">—</span>2 kiwis mid-morning — doctor's order for constipation</div>
+    <div class="rule-item"><span class="rule-dash">—</span>1 tbsp chia seeds hydrated in water</div>
+    <div class="rule-item"><span class="rule-dash">—</span>Plantago Ovata as prescribed — don't stop</div>
+    <div class="rule-item"><span class="rule-dash">—</span>No carbs at dinner</div>
+    <div class="rule-item"><span class="rule-dash">—</span>No garlic · No onion · Ever</div>
+    <div class="rule-item"><span class="rule-dash">—</span>Only olive oil for cooking</div>
+    <div class="rule-item"><span class="rule-dash">—</span>Season with lemon, ginger, fresh herbs only</div>
+    <div class="rule-item"><span class="rule-dash">—</span>One new food at a time — 3 days minimum</div>
+    <div class="rule-item"><span class="rule-dash">—</span>Eat slowly — minimum 20 minutes per meal</div>
+    <div class="rule-item"><span class="rule-dash">—</span>2.5–3L plain water daily</div>
+  </div>
+  <div class="lists-grid">
+    <div class="list-card">
+      <span class="list-label safe">✓ Confirmed safe</span>
+      <div class="list-item">Spinach</div>
+      <div class="list-item">Carrot</div>
+      <div class="list-item">Tomato</div>
+      <div class="list-item">Blueberries</div>
+      <div class="list-item">Kiwi</div>
+      <div class="list-item">Basmati rice</div>
+      <div class="list-item">Quinoa</div>
+      <div class="list-item">Almonds · Walnuts</div>
+      <div class="list-item">Lactose-free dairy</div>
+      <div class="list-item">Schär bread</div>
+      <div class="list-item">Olive oil</div>
+    </div>
+    <div class="list-card">
+      <span class="list-label avoid">✗ Never eat</span>
+      <div class="list-item">Garlic · Onion</div>
+      <div class="list-item">All legumes</div>
+      <div class="list-item">Wheat · Barley · Rye</div>
+      <div class="list-item">Regular milk / yogurt</div>
+      <div class="list-item">Honey · Agave</div>
+      <div class="list-item">Apple · Pear · Mango</div>
+      <div class="list-item">Watermelon · Figs</div>
+      <div class="list-item">Sorbitol (E-420)</div>
+      <div class="list-item">Carbonated drinks</div>
+      <div class="list-item">Fried food</div>
+    </div>
+  </div>
+  <p class="footer">you are doing something really good for yourself.</p>
+</div>
+
+<!-- GROCERY PAGE -->
+<div class="page" id="page-grocery">
+  <div class="section-card">
+    <h2>This week's groceries</h2>
+    <div class="grocery-section">
+      <span class="grocery-label">Protein</span>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Salmon fillets × 7</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Chicken breast × 7</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Eggs × 14 minimum</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Lactose-free Greek yogurt</div>
+    </div>
+    <div class="grocery-section">
+      <span class="grocery-label">Carbs</span>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Basmati rice</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Quinoa</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Schär pan de molde sin gluten</div>
+    </div>
+    <div class="grocery-section">
+      <span class="grocery-label">Vegetables &amp; fruit</span>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Asparagus — 1 bunch</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Rúcula — 2 bags</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Spinach — large bag</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Tomato · Carrot</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Kiwis × 14</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Frozen blueberries</div>
+    </div>
+    <div class="grocery-section">
+      <span class="grocery-label">Pantry</span>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Extra virgin olive oil</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Chia seeds · Lemons</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Almonds · Walnuts</div>
+      <div class="grocery-item"><span class="grocery-dash">—</span>Lactose-free milk for coffee</div>
+    </div>
+  </div>
+  <p class="footer">you are doing something really good for yourself.</p>
+</div>
+
+<script>
+const STORE = 'gut_diet_w1_v2';
+const DAYS = ['fri','sat','sun','mon','tue','wed','thu'];
+const timers = {};
+
+function load() { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; } }
+function persist(s) { localStorage.setItem(STORE, JSON.stringify(s)); flash(); }
+
+let flashTimer;
+function flash() {
+  const el = document.getElementById('saveFlash');
+  el.classList.add('show');
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function toggleDay(header) {
+  const isOpen = !header.classList.contains('closed');
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.chevron');
+  if (isOpen) {
+    header.classList.add('closed');
+    body.classList.remove('open');
+    chevron.style.transform = '';
+  } else {
+    header.classList.remove('closed');
+    body.classList.add('open');
+    chevron.style.transform = 'rotate(180deg)';
+  }
+  const s = load();
+  s['open-' + header.closest('.day-card').querySelector('.day-name').textContent] = !isOpen;
+  persist(s);
+}
+
+function toggleCheck(row) {
+  row.classList.toggle('done');
+  row.querySelector('.check-box').textContent = row.classList.contains('done') ? '✓' : '';
+  const s = load();
+  s[row.dataset.key] = row.classList.contains('done');
+  persist(s);
+}
+
+function saveText(el) {
+  const s = load(); s[el.dataset.key] = el.value; persist(s);
+}
+
+function startTimer(day) {
+  const disp = document.getElementById('tdisp-' + day);
+  const btn = document.getElementById('tbtn-' + day);
+  if (timers[day]) {
+    clearInterval(timers[day]);
+    delete timers[day];
+    disp.style.display = 'none';
+    btn.textContent = 'Start 2h timer';
+    btn.classList.remove('active');
+    return;
+  }
+  let secs = 2 * 60 * 60;
+  disp.style.display = 'block';
+  btn.textContent = 'Cancel';
+  btn.classList.add('active');
+  function tick() {
+    if (secs <= 0) {
+      clearInterval(timers[day]);
+      delete timers[day];
+      disp.textContent = '⏰ Log now!';
+      btn.textContent = 'Start 2h timer';
+      btn.classList.remove('active');
+      return;
+    }
+    secs--;
+    const h = Math.floor(secs/3600);
+    const m = Math.floor((secs%3600)/60);
+    const sec = secs%60;
+    disp.textContent = `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  }
+  tick();
+  timers[day] = setInterval(tick, 1000);
+}
+
+// Open today's day card automatically
+function openToday() {
+  const dayMap = {0:'sun',1:'mon',2:'tue',3:'wed',4:'thu',5:'fri',6:'sat'};
+  const today = dayMap[new Date().getDay()];
+  if (!DAYS.includes(today)) return;
+  document.querySelectorAll('.day-header').forEach(h => {
+    const name = h.querySelector('.day-name').textContent.toLowerCase().slice(0,3);
+    const dayKey = DAYS.find(d => d === name);
+    if (dayKey === today) {
+      h.classList.remove('closed');
+      h.nextElementSibling.classList.add('open');
+      h.querySelector('.chevron').style.transform = 'rotate(180deg)';
+    }
+  });
+}
+
+// Restore saved state
+function restore() {
+  const s = load();
+  // Checkboxes
+  document.querySelectorAll('.check-row[data-key]').forEach(row => {
+    if (s[row.dataset.key]) {
+      row.classList.add('done');
+      row.querySelector('.check-box').textContent = '✓';
+    }
+  });
+  // Day open states — if saved, use those; otherwise open today
+  // Restore diet notes
+  document.querySelectorAll('textarea[data-key^="diet-notes-"]').forEach(ta => {
+    if (s[ta.dataset.key]) ta.value = s[ta.dataset.key];
+  });
+
+  const hasSavedOpenStates = Object.keys(s).some(k => k.startsWith('open-'));
+  if (hasSavedOpenStates) {
+    document.querySelectorAll('.day-header').forEach(h => {
+      const name = h.querySelector('.day-name').textContent;
+      const isOpen = s['open-' + name];
+      if (isOpen) {
+        h.classList.remove('closed');
+        h.nextElementSibling.classList.add('open');
+        h.querySelector('.chevron').style.transform = 'rotate(180deg)';
+      } else {
+        h.classList.add('closed');
+        h.nextElementSibling.classList.remove('open');
+        h.querySelector('.chevron').style.transform = '';
+      }
+    });
+  } else {
+    openToday();
+  }
+}
+
+restore();
+</script>
+</body>
+</html>
